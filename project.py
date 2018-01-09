@@ -24,6 +24,8 @@ def showLogin():
         for x in xrange(32))
     login_session['state'] = state
     return render_template('login.html')
+    # return "The current session state is %s" % login_session['state']
+    return render_template('login.html', STATE=state)
 
 
 #JSON APIs to view Restaurant Information
