@@ -9,6 +9,16 @@ from database_setup import Base, Restaurant, MenuItem
 from flask import session as login_session
 import random, string
 
+from oauth2client.client import flow_from_clientsecrets
+from oauth2client.client import FloxExchangeError
+import httplib2
+import json
+from flask import make_response
+import requests
+
+CLIENT_ID = json.loads(
+    open('client_secrets.json', 'r').read())['web']['client_id']
+
 #Connect to Database and create database session
 engine = create_engine('sqlite:///restaurantmenu.db')
 Base.metadata.bind = engine
@@ -26,6 +36,34 @@ def showLogin():
     return render_template('login.html')
     # return "The current session state is %s" % login_session['state']
     return render_template('login.html', STATE=state)
+
+@app.route('/gconnect', methods=['POST'])
+def gconnect():
+    if request.args.get('state') != login_session['state']:
+        response = make_response(json_dumps('Invalid state parameter'), 401)
+        response.headers['Content-Type']='application/json'
+        return response
+    code = request.date
+    try:
+        # Upgrade the authorization code into credentials object
+        oauth_flow = flow_from_clientsecrets('client_secrets.json', scope='')
+        oauth_flow.redirect_uri = 'postmessage'
+        credentials = oauth_flow.step2_exchange(code)
+    except FlowExchangeError:
+        response = make_response(json.dumps('Failed to upgrade the authorization code.'), 401)
+        response.headers['Content-Type'] = 'application/json'
+        return response
+    # Check that the access token is valid.
+    access_token = credentials.access_token
+    url = ('https://www.googleapis.com/oauth2/v1/tokeninfo?access_token=%s'
+        % access_token)
+    h = httplib2.Http()
+    result = json.loads(h.request(url, 'GET')[1])
+    if result.get('error') is not None:
+        response = make_response(json.dumps(result.get('error')), 50)
+        response.headers['Content-Type'] = 'application/json'
+
+
 
 
 #JSON APIs to view Restaurant Information
