@@ -1,0 +1,6 @@
+*.pyc
+.vagrant/
+restaurantmenu.db 
+restaurantmenuwithusers.db
+client_secrets.json
+fb_client_secrets.json
